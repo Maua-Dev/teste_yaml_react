@@ -33,6 +33,31 @@ jobs:
               exit 1
             fi
 
+        - name: Bootstrap Check
+          run: |
+              cd iac
+              cdk bootstrap aws://${{ env.AWS_ACCOUNT_ID }}/${{ vars.AWS_REGION }} 
+
+        - name: DeployWithCDK
+          run: |
+              cd iac
+              cdk synth
+              cdk deploy --require-approval never
+          env:
+              AWS_REGION: ${{ vars.AWS_REGION }}
+              AWS_ACCOUNT_ID: ${{ env.AWS_ACCOUNT_ID }}
+              STACK_NAME: ${{ env.STACK_NAME }}
+              GITHUB_REF_NAME: ${{ github.ref_name }}
+              MSS_NAME: ${{ github.event.repository.name }}
+              PROJECT_NAME: ${{ github.event.repository.name }}
+              S3_ASSETS_CDN: ${{ vars.S3_ASSETS_CDN }}
+              AUTH_DEV_SYSTEM_USERPOOL_ARN_DEV: ${{ secrets.AUTH_DEV_SYSTEM_USERPOOL_ARN_DEV }}
+              AUTH_DEV_SYSTEM_USERPOOL_ARN_PROD: ${{ secrets.AUTH_DEV_SYSTEM_USERPOOL_ARN_PROD }}
+              REPLY_TO_EMAIL: ${{ vars.REPLY_TO_EMAIL }}
+              FROM_EMAIL: ${{ vars.FROM_EMAIL }}
+              HIDDEN_COPY: ${{ vars.HIDDEN_COPY }}
+              S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
+
         - name: Setup AWS Credentials
           uses: aws-actions/configure-aws-credentials@v2
           with:
