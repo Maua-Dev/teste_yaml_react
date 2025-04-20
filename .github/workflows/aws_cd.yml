@@ -60,6 +60,33 @@ jobs:
         run: |
           npm install
           npm run build
+      
+      - name: Set Stack and Project Names
+        run: |
+          PROJECT_NAME=$(echo ${{ github.event.repository.name }} | sed -e 's/[-_]/ /g' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1' | sed -e 's/ //g')
+          STACK_NAME="${PROJECT_NAME}StackFront${{ github.ref_name }}"
+          
+          echo "PROJECT_NAME=${PROJECT_NAME}" >> $GITHUB_ENV
+          echo "STACK_NAME=${STACK_NAME}" >> $GITHUB_ENV
+          echo "Defined PROJECT_NAME: ${PROJECT_NAME}"
+          echo "Defined STACK_NAME: ${STACK_NAME}"
+
+      - name: Verify Variables
+        run: |
+          if [ -z "${{ env.STACK_NAME }}" ]; then
+            echo "::error::STACK_NAME is not set!"
+            exit 1
+          fi
+          if [ -z "${{ env.PROJECT_NAME }}" ]; then
+            echo "::error::PROJECT_NAME is not set!"
+            exit 1
+          fi
+
+      - name: Debug Variables
+        run: |
+          echo "STACK_NAME: ${{ env.STACK_NAME }}"
+          echo "PROJECT_NAME: ${{ env.PROJECT_NAME }}"
+          echo "AWS_REGION: ${{ env.AWS_REGION }}"
 
       - name: Verify Bootstrap
         run: |
