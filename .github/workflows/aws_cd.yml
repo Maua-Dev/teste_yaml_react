@@ -62,10 +62,10 @@ jobs:
             npm install
             npm install -g aws-cdk
 
-                - name: Bootstrap Check
+        - name: Bootstrap Check
           run: |
-              cd iac
-              cdk bootstrap aws://${{ env.AWS_ACCOUNT_ID }}/${{ vars.AWS_REGION }} 
+            cd iac
+            cdk bootstrap aws://${{ env.AWS_ACCOUNT_ID }}/${{ vars.AWS_REGION }} 
 
         - name: DeployWithCDK
           run: |
@@ -86,7 +86,6 @@ jobs:
               FROM_EMAIL: ${{ vars.FROM_EMAIL }}
               HIDDEN_COPY: ${{ vars.HIDDEN_COPY }}
               S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
-              
         - name: Build and Export
           run: |
             npm install
