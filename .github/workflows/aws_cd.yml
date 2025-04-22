@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - dev
+      - homolog
+      - prod
 jobs:
   DeployToAWS:
-    environment: 
+    environment:
       name: ${{ github.ref_name }}
     runs-on: ubuntu-latest
     permissions:
@@ -14,7 +16,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v2
-      
+
       # 1. Configuração inicial
       - name: Determine AWS account ID
         run: |
@@ -27,14 +29,14 @@ jobs:
           else
             echo "Invalid branch name!" && exit 1
           fi
-          echo "AWS_REGION=sa-east-1" >> $GITHUB_ENV
+          echo "AWS_REGION=us-east-1" >> $GITHUB_ENV
 
       # 2. Instalação de dependências
       - name: Use Node.js 18.x
         uses: actions/setup-node@v3
         with:
           node-version: 18.x
-      
+
       - name: Install AWS CDK
         run: npm install -g aws-cdk
 
@@ -43,7 +45,7 @@ jobs:
         id: aws-credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-region: sa-east-1
+          aws-region: us-east-1
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/GithubActionsRole
           role-session-name: github-action
           role-duration-seconds: 3600
@@ -60,12 +62,12 @@ jobs:
         run: |
           npm install
           npm run build
-      
+
       - name: Set Stack and Project Names
         run: |
           PROJECT_NAME=$(echo ${{ github.event.repository.name }} | sed -e 's/[-_]/ /g' | awk '{for(i=1;i<=NF;i++)sub(/./,toupper(substr($i,1,1)),$i)}1' | sed -e 's/ //g')
           STACK_NAME="${PROJECT_NAME}StackFront${{ github.ref_name }}"
-          
+
           echo "PROJECT_NAME=${PROJECT_NAME}" >> $GITHUB_ENV
           echo "STACK_NAME=${STACK_NAME}" >> $GITHUB_ENV
           echo "Defined PROJECT_NAME: ${PROJECT_NAME}"
@@ -99,7 +101,7 @@ jobs:
           cdk synth
           cdk deploy --require-approval never
         env:
-          AWS_REGION: sa-east-1
+          AWS_REGION: us-east-1
 
       - name: Set CloudFront ID
         run: |
@@ -110,6 +112,6 @@ jobs:
           AWS_BUCKET=$(aws cloudformation --region ${{env.AWS_REGION}} describe-stacks --stack-name ${{env.STACK_NAME}} --query "Stacks[0].Outputs[?OutputKey=='${{env.PROJECT_NAME}}BucketName${{github.ref_name}}'].OutputValue" --output text)
           echo "AWS_BUCKET='$AWS_BUCKET'" >> $GITHUB_ENV
       - name: Upload to S3
-        run: aws s3 cp dist s3://${{env.AWS_BUCKET}}/ --recursive --region sa-east-1
+        run: aws s3 cp dist s3://${{env.AWS_BUCKET}}/ --recursive --region us-east-1
       - name: Clear CDN cache
         run: aws cloudfront create-invalidation --distribution-id ${{env.CLOUD_FRONT_ID}} --paths "/*" --region us-east-1
